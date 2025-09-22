@@ -1,15 +1,14 @@
-import React, { useState } from 'react';
+import React from 'react';
 
-const Compartment = ({ id, name, capacity, currentItems, items = [] }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+const Compartment = ({ id, name, capacity, currentItems, items = [], isExpanded, onToggleExpanded }) => {
   const occupancyPercentage = (currentItems / capacity) * 100;
 
   return (
-    <div className={`compartment ${isExpanded ? 'expanded' : ''}`} onClick={() => setIsExpanded(!isExpanded)}>
+    <div className={`compartment ${isExpanded ? 'expanded' : ''}`} onClick={() => onToggleExpanded(id)}>
       {isExpanded && (
         <button className="close-button" onClick={(e) => {
           e.stopPropagation();
-          setIsExpanded(false);
+          onToggleExpanded(id);
         }}>
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -23,15 +22,15 @@ const Compartment = ({ id, name, capacity, currentItems, items = [] }) => {
         <p>Space Used: {currentItems}</p>
         <p>Available Space: {capacity - currentItems}</p>
         <div className="occupancy-bar">
-          <div 
+          <div
             className={`occupancy-fill ${occupancyPercentage > 90 ? 'danger' : occupancyPercentage > 70 ? 'warning' : ''}`}
             style={{ width: `${occupancyPercentage}%` }}
           />
         </div>
       </div>
-      
+
       {isExpanded && items.length > 0 && (
-        <div className="items-list">
+        <div className="items-list" onClick={(e) => e.stopPropagation()}>
           <h4>Items in Compartment:</h4>
           <div className="items-grid">
             {items.map(item => {
@@ -43,7 +42,7 @@ const Compartment = ({ id, name, capacity, currentItems, items = [] }) => {
                   <p>Current Quantity: {item.current_quantity}</p>
                   <p>Maximum Capacity: {item.max_quantity}</p>
                   <div className="occupancy-bar">
-                    <div 
+                    <div
                       className={`occupancy-fill ${itemOccupancy > 90 ? 'danger' : itemOccupancy > 70 ? 'warning' : ''}`}
                       style={{ width: `${itemOccupancy}%` }}
                     />
@@ -54,9 +53,9 @@ const Compartment = ({ id, name, capacity, currentItems, items = [] }) => {
           </div>
         </div>
       )}
-      
+
       {isExpanded && items.length === 0 && (
-        <div className="no-items">No items in this compartment</div>
+        <div className="no-items" onClick={(e) => e.stopPropagation()}>No items in this compartment</div>
       )}
     </div>
   );

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Compartment from './Compartment';
 import { warehouseApi } from '../../services/api';
 
@@ -6,6 +6,7 @@ const CompartmentList = () => {
   const [compartments, setCompartments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [expandedCompartment, setExpandedCompartment] = useState(null);
 
   useEffect(() => {
     fetchWarehouseData();
@@ -15,13 +16,13 @@ const CompartmentList = () => {
     try {
       setLoading(true);
       const response = await warehouseApi.getWarehouseReport();
-      
+
       console.log('API Response:', response);
-      
+
       if (response.success && response.data) {
         // Handle nested data structure - response.data.data is the actual array
         const compartmentsData = response.data.data || response.data;
-        
+
         if (Array.isArray(compartmentsData)) {
           // Sort compartments by ID number
           const sortedCompartments = [...compartmentsData].sort((a, b) => {
@@ -58,7 +59,7 @@ const CompartmentList = () => {
       <p>Loading warehouse data...</p>
     </div>
   );
-  
+
   if (error) return (
     <div className="error-report">
       <h3>Error Loading Data</h3>
@@ -89,9 +90,19 @@ const CompartmentList = () => {
               current_quantity: item.currentQuantity,
               max_quantity: item.maxQuantity
             }))}
+            isExpanded={expandedCompartment === compartment.id}
+            onToggleExpanded={(id) => {
+              setExpandedCompartment(expandedCompartment === id ? null : id);
+            }}
           />
         ))}
       </div>
+      {expandedCompartment && (
+        <div
+          className="compartment-overlay"
+          onClick={() => setExpandedCompartment(null)}
+        />
+      )}
     </div>
   );
 };
