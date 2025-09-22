@@ -7,6 +7,8 @@
   --primary-light: #60a5fa;
   --success: #22c55e;
   --success-light: #86efac;
+  --warning: #f59e0b;
+  --warning-light: #fbbf24;
   --danger: #dc3545;
   --danger-light: #fca5a5;
   --gray-50: #f8fafc;
@@ -42,6 +44,8 @@
   --primary-light: #93c5fd;
   --success: #34d399;
   --success-light: #6ee7b7;
+  --warning: #fbbf24;
+  --warning-light: #fde047;
   --danger: #f87171;
   --danger-light: #fca5a5;
   --gray-50: #0a192f;
@@ -290,8 +294,9 @@ body {
   max-width: 800px;
   max-height: 90vh;
   z-index: 1000;
-  animation: expandInPlace 0.3s ease;
   overflow-y: auto;
+  animation: expandInPlace 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: transform, opacity;
 }
 
 .compartment.expanded .compartment-info {
@@ -342,19 +347,67 @@ body {
   background: rgba(0, 0, 0, 0.6);
   z-index: 999;
   opacity: 0;
-  animation: fadeIn 0.3s ease forwards;
+  visibility: hidden;
   backdrop-filter: blur(4px);
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  pointer-events: none;
+}
+
+.compartment-overlay.active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* Close button for modal */
+.close-button {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: var(--danger);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+  z-index: 1001;
+}
+
+.close-button:hover {
+  background: var(--danger-light);
+  transform: scale(1.1);
+}
+
+.close-button svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Dark theme close button */
+.dark-theme .close-button {
+  background: var(--danger-light);
+  color: var(--gray-900);
+}
+
+.dark-theme .close-button:hover {
+  background: var(--danger);
+  color: white;
 }
 
 /* Animations */
 @keyframes expandInPlace {
   from {
     opacity: 0;
-    transform: translate(-50%, -60%);
+    transform: translate(-50%, -60%) scale(0.9);
   }
   to {
     opacity: 1;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%) scale(1);
   }
 }
 
@@ -1012,6 +1065,61 @@ li:hover {
   justify-content: space-between;
   align-items: center;
   margin-bottom: var(--spacing-lg);
+}
+
+.header-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+}
+
+.print-button, .download-button {
+  padding: 0.5rem 1rem;
+  background: var(--gray-200);
+  border: 1px solid var(--gray-300);
+  color: var(--gray-700);
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  width: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.print-button:hover {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+  transform: translateY(-1px);
+}
+
+.download-button:hover {
+  background: var(--success);
+  color: white;
+  border-color: var(--success);
+  transform: translateY(-1px);
+}
+
+/* Dark theme specific styles for new buttons */
+.dark-theme .print-button, 
+.dark-theme .download-button {
+  background: var(--gray-300);
+  border-color: var(--border-color);
+  color: var(--text-secondary);
+}
+
+.dark-theme .print-button:hover {
+  background: var(--primary-light);
+  color: var(--gray-900);
+  border-color: var(--primary-light);
+}
+
+.dark-theme .download-button:hover {
+  background: var(--success);
+  color: var(--gray-900);
+  border-color: var(--success);
 }
 
 .transactions-page h2 {
