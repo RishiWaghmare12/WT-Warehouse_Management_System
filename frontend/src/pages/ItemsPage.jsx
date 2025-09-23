@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ProgressBar from '../components/Charts/ProgressBar';
+import ItemEditModal from '../components/Modals/ItemEditModal';
+import { useToast } from '../context/ToastContext';
 import { warehouseApi } from '../services/api';
 import '../App.css';
 
@@ -11,6 +13,9 @@ const ItemsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [showLowStock, setShowLowStock] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const { showSuccess, showError } = useToast();
 
   useEffect(() => {
     fetchItems();
@@ -78,6 +83,24 @@ const ItemsPage = () => {
     
     return matchesSearch && matchesCategory && matchesLowStock;
   });
+
+  const handleEditItem = (item) => {
+    setEditingItem(item);
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveItem = (updatedItem) => {
+    // Update the items list with the edited item
+    setItems(prev => prev.map(item => 
+      item.id === updatedItem.id ? updatedItem : item
+    ));
+    showSuccess(`Item "${updatedItem.name}" updated successfully`);
+  };
+
+  const handleCloseModal = () => {
+    setIsEditModalOpen(false);
+    setEditingItem(null);
+  };
 
   return (
     <div className="items-page">
@@ -172,6 +195,16 @@ const ItemsPage = () => {
                       {item.availableSpace} available
                     </span>
                   </div>
+                  
+                  <div className="item-actions">
+                    <button 
+                      className="edit-item-btn"
+                      onClick={() => handleEditItem(item)}
+                      title="Edit item"
+                    >
+                      ✏️ Edit
+                    </button>
+                  </div>
                 </div>
               );
             })
@@ -180,6 +213,13 @@ const ItemsPage = () => {
           )}
         </div>
       )}
+
+      <ItemEditModal
+        item={editingItem}
+        isOpen={isEditModalOpen}
+        onClose={handleCloseModal}
+        onSave={handleSaveItem}
+      />
     </div>
   );
 };

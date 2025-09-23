@@ -68,13 +68,13 @@ const HomePage = () => {
             value: items.filter(item => {
               if (item.maxQuantity === 0) return false;
               const util = (item.currentQuantity / item.maxQuantity) * 100;
-              return util >= 20 && util < 70;
+              return util >= 20 && util < 60;
             }).length,
             color: '#ffc107'
           },
           { 
             label: 'Good Stock', 
-            value: items.filter(item => item.maxQuantity > 0 && (item.currentQuantity / item.maxQuantity) * 100 >= 70).length,
+            value: items.filter(item => item.maxQuantity > 0 && (item.currentQuantity / item.maxQuantity) * 100 >= 60).length,
             color: '#28a745'
           }
         ];

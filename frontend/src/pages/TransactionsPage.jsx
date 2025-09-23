@@ -1,15 +1,25 @@
 import React, { useState, useEffect } from 'react';
+import { useToast } from '../context/ToastContext';
 import { warehouseApi } from '../services/api';
 import '../App.css';
 
 const TransactionsPage = () => {
   const [transactions, setTransactions] = useState([]);
-  const [error, setError] = useState('');
+  const [filteredTransactions, setFilteredTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const { showSuccess, showError } = useToast();
 
   useEffect(() => {
     fetchTransactions();
   }, []);
+
+  useEffect(() => {
+    filterTransactions();
+  }, [transactions, searchTerm, typeFilter, dateFrom, dateTo]);
 
   const fetchTransactions = async () => {
     try {
@@ -31,20 +41,47 @@ const TransactionsPage = () => {
         } else {
           console.error('Unexpected response format:', response.data);
           setTransactions([]);
-          setError('Failed to load transactions: Invalid data format');
+          showError('Failed to load transactions: Invalid data format');
         }
       } else {
         console.error('Error fetching transactions:', response.error);
-        setError('Failed to fetch transactions');
+        showError('Failed to fetch transactions');
         setTransactions([]);
       }
     } catch (err) {
       console.error('Error fetching transactions:', err);
-      setError('Failed to fetch transactions');
+      showError('Failed to fetch transactions');
       setTransactions([]);
     } finally {
       setLoading(false);
     }
+  };
+
+  const filterTransactions = () => {
+    let filtered = transactions.filter(transaction => {
+      const matchesSearch = searchTerm === '' || 
+        transaction.itemName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        transaction.categoryName?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesType = typeFilter === '' || transaction.type === typeFilter;
+      
+      let matchesDateRange = true;
+      if (dateFrom || dateTo) {
+        const transactionDate = new Date(transaction.date || transaction.createdAt);
+        if (dateFrom) {
+          matchesDateRange = matchesDateRange && transactionDate >= new Date(dateFrom);
+        }
+        if (dateTo) {
+          const toDate = new Date(dateTo);
+          toDate.setHours(23, 59, 59, 999);
+          matchesDateRange = matchesDateRange && transactionDate <= toDate;
+        }
+      }
+      
+      return matchesSearch && matchesType && matchesDateRange;
+    });
+
+    setFilteredTransactions(filtered);
   };
 
   const formatDate = (dateString) => {
@@ -100,14 +137,15 @@ const TransactionsPage = () => {
   };
 
   const handleDownload = () => {
+    const dataToExport = filteredTransactions.length > 0 ? filteredTransactions : transactions;
     const csvContent = [
       ['Type', 'Item Name', 'Item ID', 'Quantity', 'Date'],
-      ...transactions.map(transaction => [
+      ...dataToExport.map(transaction => [
         transaction.type,
         transaction.itemName,
         transaction.itemId,
         transaction.quantity,
-        formatDate(transaction.createdAt || new Date())
+        formatDate(transaction.createdAt || transaction.date || new Date())
       ])
     ].map(row => row.map(field => `"${field}"`).join(',')).join('\n');
 
@@ -120,6 +158,7 @@ const TransactionsPage = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    showSuccess(`Exported ${dataToExport.length} transactions`);
   };
 
   return (
@@ -151,37 +190,90 @@ const TransactionsPage = () => {
           </button>
         </div>
       </div>
+
+      <div className="transactions-filters">
+        <input
+          type="text"
+          placeholder="Search transactions..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="search-input"
+        />
+        
+        <select
+          value={typeFilter}
+          onChange={(e) => setTypeFilter(e.target.value)}
+          className="type-filter"
+        >
+          <option value="">All Types</option>
+          <option value="SEND">Send</option>
+          <option value="RECEIVE">Receive</option>
+        </select>
+        
+        <div className="date-range-filter">
+          <label>From:</label>
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            className="date-filter"
+          />
+          <label>To:</label>
+          <input
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            className="date-filter"
+          />
+        </div>
+        
+        {(searchTerm || typeFilter || dateFrom || dateTo) && (
+          <button 
+            className="clear-filters-btn"
+            onClick={() => {
+              setSearchTerm('');
+              setTypeFilter('');
+              setDateFrom('');
+              setDateTo('');
+            }}
+          >
+            Clear Filters
+          </button>
+        )}
+      </div>
+
       {loading ? (
         <div className="loading-state">
           <div className="loading-spinner"></div>
           <p>Loading transactions...</p>
         </div>
-      ) : error ? (
-        <div className="error-report">
-          <h3>Error Loading Transactions</h3>
-          <p>{error}</p>
-          <button onClick={handleRefresh}>Try Again</button>
-        </div>
       ) : (
         <div className="transactions-list">
-          {transactions.length > 0 ? (
-            transactions.map(transaction => (
-              <div
-                key={transaction.id}
-                className={`transaction-card ${transaction.type ? transaction.type.toLowerCase() : ''}`}
-              >
-                <div className="transaction-header">
-                  <h3>{transaction.type}</h3>
-                  <span className="transaction-date">{formatDate(transaction.createdAt || new Date())}</span>
-                </div>
-
-                <div className="transaction-details">
-                  <p><strong>Item:</strong> {transaction.itemName}</p>
-                  <p><strong>Item ID:</strong> {transaction.itemId}</p>
-                  <p><strong>Quantity:</strong> {transaction.quantity}</p>
-                </div>
+          {filteredTransactions.length > 0 ? (
+            <>
+              <div className="transactions-summary">
+                Showing {filteredTransactions.length} of {transactions.length} transactions
               </div>
-            ))
+              {filteredTransactions.map(transaction => (
+                <div
+                  key={transaction.id}
+                  className={`transaction-card ${transaction.type ? transaction.type.toLowerCase() : ''}`}
+                >
+                  <div className="transaction-header">
+                    <h3>{transaction.type}</h3>
+                    <span className="transaction-date">{formatDate(transaction.createdAt || transaction.date || new Date())}</span>
+                  </div>
+
+                  <div className="transaction-details">
+                    <p><strong>Item:</strong> {transaction.itemName}</p>
+                    <p><strong>Item ID:</strong> {transaction.itemId}</p>
+                    <p><strong>Quantity:</strong> {transaction.quantity}</p>
+                  </div>
+                </div>
+              ))}
+            </>
+          ) : transactions.length > 0 ? (
+            <div className="no-transactions">No transactions match your filters</div>
           ) : (
             <div className="no-transactions">No transactions found</div>
           )}
