@@ -1,4 +1,5 @@
 import React from 'react';
+import ProgressBar from '../Charts/ProgressBar';
 
 const Compartment = ({ id, name, capacity, currentItems, items = [], isExpanded, onToggleExpanded }) => {
   const occupancyPercentage = (currentItems / capacity) * 100;
@@ -21,12 +22,13 @@ const Compartment = ({ id, name, capacity, currentItems, items = [], isExpanded,
         <p>Total Capacity: {capacity}</p>
         <p>Space Used: {currentItems}</p>
         <p>Available Space: {capacity - currentItems}</p>
-        <div className="occupancy-bar">
-          <div
-            className={`occupancy-fill ${occupancyPercentage > 90 ? 'danger' : occupancyPercentage > 70 ? 'warning' : ''}`}
-            style={{ width: `${occupancyPercentage}%` }}
-          />
-        </div>
+        <ProgressBar
+          current={currentItems}
+          max={capacity}
+          label={`Utilization: ${occupancyPercentage.toFixed(1)}%`}
+          colorScheme="capacity"
+          size="medium"
+        />
       </div>
 
       {isExpanded && items.length > 0 && (
@@ -41,12 +43,12 @@ const Compartment = ({ id, name, capacity, currentItems, items = [], isExpanded,
                   <p>ID: {item.item_id}</p>
                   <p>Current Quantity: {item.current_quantity}</p>
                   <p>Maximum Capacity: {item.max_quantity}</p>
-                  <div className="occupancy-bar">
-                    <div
-                      className={`occupancy-fill ${itemOccupancy > 90 ? 'danger' : itemOccupancy > 70 ? 'warning' : ''}`}
-                      style={{ width: `${itemOccupancy}%` }}
-                    />
-                  </div>
+                  <ProgressBar
+                    current={item.current_quantity}
+                    max={item.max_quantity}
+                    colorScheme="stock"
+                    size="small"
+                  />
                 </div>
               );
             })}

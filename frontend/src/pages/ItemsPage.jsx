@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ProgressBar from '../components/Charts/ProgressBar';
 import { warehouseApi } from '../services/api';
 import '../App.css';
 
@@ -155,15 +156,13 @@ const ItemsPage = () => {
                     <span className="max-quantity">{item.maxQuantity}</span>
                   </div>
                   
-                  <div className="utilization-bar">
-                    <div 
-                      className="utilization-fill"
-                      style={{
-                        width: `${utilizationPercentage}%`,
-                        backgroundColor: getUtilizationColor(utilizationPercentage)
-                      }}
-                    ></div>
-                  </div>
+                  <ProgressBar
+                    current={item.currentQuantity}
+                    max={item.maxQuantity}
+                    colorScheme="stock"
+                    size="medium"
+                    showPercentage={false}
+                  />
                   
                   <div className="item-stats">
                     <span className="utilization-text">
