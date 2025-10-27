@@ -59,12 +59,12 @@ const TransactionsPage = () => {
 
   const filterTransactions = () => {
     let filtered = transactions.filter(transaction => {
-      const matchesSearch = searchTerm === '' || 
+      const matchesSearch = searchTerm === '' ||
         transaction.itemName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         transaction.categoryName?.toLowerCase().includes(searchTerm.toLowerCase());
-      
+
       const matchesType = typeFilter === '' || transaction.type === typeFilter;
-      
+
       let matchesDateRange = true;
       if (dateFrom || dateTo) {
         const transactionDate = new Date(transaction.date || transaction.createdAt);
@@ -77,7 +77,7 @@ const TransactionsPage = () => {
           matchesDateRange = matchesDateRange && transactionDate <= toDate;
         }
       }
-      
+
       return matchesSearch && matchesType && matchesDateRange;
     });
 
@@ -162,123 +162,231 @@ const TransactionsPage = () => {
   };
 
   return (
-    <div className="transactions-page">
-      <div className="transactions-header">
-        <h2>Transaction History</h2>
-        <div className="header-actions">
-          <button className="print-button" onClick={handlePrint}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="6,9 6,2 18,2 18,9" />
-              <path d="M6,18H4a2,2 0 0,1-2-2V11a2,2 0 0,1,2-2H20a2,2 0 0,1,2,2v5a2,2 0 0,1-2,2H18" />
-              <polyline points="6,14 18,14 18,22 6,22 6,14" />
-            </svg>
-            Print
-          </button>
-          <button className="download-button" onClick={handleDownload}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7,10 12,15 17,10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-            Download CSV
-          </button>
-          <button className="refresh-button" onClick={handleRefresh}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3" />
-            </svg>
-            Refresh Data
-          </button>
+    <div className="transactions-container">
+      {/* Header Section */}
+      <div className="page-header">
+        <div className="header-main">
+          <div className="header-info">
+            <h1 className="page-title">Transaction History</h1>
+            <p className="page-subtitle">View and manage all warehouse transactions</p>
+          </div>
+          <div className="header-actions">
+            <button className="btn btn-outline" onClick={handleRefresh}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3" />
+              </svg>
+              Refresh
+            </button>
+            <button className="btn btn-primary" onClick={handleDownload}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7,10 12,15 17,10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              Export CSV
+            </button>
+            <button className="btn btn-secondary" onClick={handlePrint}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="6,9 6,2 18,2 18,9" />
+                <path d="M6,18H4a2,2 0 0,1-2-2V11a2,2 0 0,1,2-2H20a2,2 0 0,1,2,2v5a2,2 0 0,1-2,2H18" />
+                <polyline points="6,14 18,14 18,22 6,22 6,14" />
+              </svg>
+              Print
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="transactions-filters">
-        <input
-          type="text"
-          placeholder="Search transactions..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="search-input"
-        />
-        
-        <select
-          value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value)}
-          className="type-filter"
-        >
-          <option value="">All Types</option>
-          <option value="SEND">Send</option>
-          <option value="RECEIVE">Receive</option>
-        </select>
-        
-        <div className="date-range-filter">
-          <label>From:</label>
-          <input
-            type="date"
-            value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-            className="date-filter"
-          />
-          <label>To:</label>
-          <input
-            type="date"
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-            className="date-filter"
-          />
-        </div>
-        
-        {(searchTerm || typeFilter || dateFrom || dateTo) && (
-          <button 
-            className="clear-filters-btn"
-            onClick={() => {
-              setSearchTerm('');
-              setTypeFilter('');
-              setDateFrom('');
-              setDateTo('');
-            }}
-          >
-            Clear Filters
-          </button>
-        )}
-      </div>
-
-      {loading ? (
-        <div className="loading-state">
-          <div className="loading-spinner"></div>
-          <p>Loading transactions...</p>
-        </div>
-      ) : (
-        <div className="transactions-list">
-          {filteredTransactions.length > 0 ? (
-            <>
-              <div className="transactions-summary">
-                Showing {filteredTransactions.length} of {transactions.length} transactions
-              </div>
-              {filteredTransactions.map(transaction => (
-                <div
-                  key={transaction.id}
-                  className={`transaction-card ${transaction.type ? transaction.type.toLowerCase() : ''}`}
-                >
-                  <div className="transaction-header">
-                    <h3>{transaction.type}</h3>
-                    <span className="transaction-date">{formatDate(transaction.createdAt || transaction.date || new Date())}</span>
-                  </div>
-
-                  <div className="transaction-details">
-                    <p><strong>Item:</strong> {transaction.itemName}</p>
-                    <p><strong>Item ID:</strong> {transaction.itemId}</p>
-                    <p><strong>Quantity:</strong> {transaction.quantity}</p>
-                  </div>
-                </div>
-              ))}
-            </>
-          ) : transactions.length > 0 ? (
-            <div className="no-transactions">No transactions match your filters</div>
-          ) : (
-            <div className="no-transactions">No transactions found</div>
+      {/* Filters Section */}
+      <div className="filters-card">
+        <div className="filters-header">
+          <h3 className="filters-title">Filters</h3>
+          {(searchTerm || typeFilter || dateFrom || dateTo) && (
+            <button
+              className="clear-all-btn"
+              onClick={() => {
+                setSearchTerm('');
+                setTypeFilter('');
+                setDateFrom('');
+                setDateTo('');
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+              Clear All
+            </button>
           )}
         </div>
-      )}
+
+        <div className="filters-grid">
+          <div className="filter-field">
+            <label className="field-label">Search</label>
+            <div className="input-group">
+              <svg className="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Search by item name or category..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="form-input"
+              />
+            </div>
+          </div>
+
+          <div className="filter-field">
+            <label className="field-label">Transaction Type</label>
+            <div className="select-wrapper">
+              <select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+                className="form-select"
+              >
+                <option value="">All Types</option>
+                <option value="SEND">Send</option>
+                <option value="RECEIVE">Receive</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="filter-field">
+            <label className="field-label">Date Range</label>
+            <div className="date-group">
+              <div className="date-input-wrapper">
+                <svg className="date-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className="form-input date-input"
+                />
+              </div>
+              <span className="date-divider">to</span>
+              <div className="date-input-wrapper">
+                <svg className="date-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className="form-input date-input"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Results Summary */}
+      <div className="results-summary">
+        <div className="summary-stats">
+          <span className="total-count">
+            {filteredTransactions.length} of {transactions.length} transactions
+          </span>
+          {filteredTransactions.length !== transactions.length && (
+            <span className="filtered-indicator">(filtered)</span>
+          )}
+        </div>
+      </div>
+
+      {/* Table Section */}
+      <div className="table-container">
+        {loading ? (
+          <div className="loading-state">
+            <div className="loading-spinner"></div>
+            <p>Loading transactions...</p>
+          </div>
+        ) : filteredTransactions.length > 0 ? (
+          <div className="table-wrapper">
+            <table className="transactions-table">
+              <thead>
+                <tr>
+                  <th className="type-column">Type</th>
+                  <th className="item-column">Item Details</th>
+                  <th className="quantity-column">Quantity</th>
+                  <th className="date-column">Date & Time</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredTransactions.map((transaction, index) => (
+                  <tr key={transaction.id || index} className="transaction-row">
+                    <td className="type-cell">
+                      <span className={`type-badge ${transaction.type?.toLowerCase() || 'unknown'}`}>
+                        {transaction.type || 'Unknown'}
+                      </span>
+                    </td>
+                    <td className="item-cell">
+                      <div className="item-info">
+                        <div className="item-name">{transaction.itemName || 'N/A'}</div>
+                        <div className="item-id">ID: {transaction.itemId || 'N/A'}</div>
+                      </div>
+                    </td>
+                    <td className="quantity-cell">
+                      <span className="quantity-value">{transaction.quantity || 0}</span>
+                    </td>
+                    <td className="date-cell">
+                      <div className="date-info">
+                        <div className="date-primary">
+                          {formatDate(transaction.createdAt || transaction.date || new Date())}
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : transactions.length > 0 ? (
+          <div className="empty-state">
+            <div className="empty-icon">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
+              </svg>
+            </div>
+            <h3>No matching transactions</h3>
+            <p>Try adjusting your search criteria or clear the filters to see all transactions.</p>
+            <button
+              className="clear-filters-btn"
+              onClick={() => {
+                setSearchTerm('');
+                setTypeFilter('');
+                setDateFrom('');
+                setDateTo('');
+              }}
+            >
+              Clear All Filters
+            </button>
+          </div>
+        ) : (
+          <div className="empty-state">
+            <div className="empty-icon">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M9 12l2 2 4-4" />
+                <path d="M21 12c-1 0-3-1-3-3s2-3 3-3 3 1 3 3-2 3-3 3" />
+                <path d="M3 12c1 0 3-1 3-3s-2-3-3-3-3 1-3 3 2 3 3 3" />
+                <path d="M12 3c0 1-1 3-3 3s-3-2-3-3 1-3 3-3 3 2 3 3" />
+                <path d="M12 21c0-1 1-3 3-3s3 2 3 3-1 3-3 3-3-2-3-3" />
+              </svg>
+            </div>
+            <h3>No transactions found</h3>
+            <p>There are no transactions in the system yet. Start by adding some items to the warehouse.</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
