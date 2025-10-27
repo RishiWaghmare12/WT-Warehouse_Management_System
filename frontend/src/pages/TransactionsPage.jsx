@@ -11,6 +11,7 @@ const TransactionsPage = () => {
   const [typeFilter, setTypeFilter] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [menuOpen, setMenuOpen] = useState(false);
   const { showSuccess, showError } = useToast();
 
   useEffect(() => {
@@ -20,6 +21,17 @@ const TransactionsPage = () => {
   useEffect(() => {
     filterTransactions();
   }, [transactions, searchTerm, typeFilter, dateFrom, dateTo]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuOpen && !event.target.closest('.menu-dropdown')) {
+        setMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [menuOpen]);
 
   const fetchTransactions = async () => {
     try {
@@ -171,28 +183,43 @@ const TransactionsPage = () => {
             <p className="page-subtitle">View and manage all warehouse transactions</p>
           </div>
           <div className="header-actions">
-            <button className="btn btn-outline" onClick={handleRefresh}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3" />
-              </svg>
-              Refresh
-            </button>
-            <button className="btn btn-primary" onClick={handleDownload}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7,10 12,15 17,10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
-              Export CSV
-            </button>
-            <button className="btn btn-secondary" onClick={handlePrint}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="6,9 6,2 18,2 18,9" />
-                <path d="M6,18H4a2,2 0 0,1-2-2V11a2,2 0 0,1,2-2H20a2,2 0 0,1,2,2v5a2,2 0 0,1-2,2H18" />
-                <polyline points="6,14 18,14 18,22 6,22 6,14" />
-              </svg>
-              Print
-            </button>
+            <div className="menu-dropdown">
+              <button className="btn btn-outline" onClick={() => setMenuOpen(!menuOpen)}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="1" />
+                  <circle cx="12" cy="5" r="1" />
+                  <circle cx="12" cy="19" r="1" />
+                </svg>
+                Actions
+              </button>
+
+              {menuOpen && (
+                <div className="menu-dropdown-content">
+                  <button className="menu-item" onClick={handleRefresh}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3" />
+                    </svg>
+                    Refresh Data
+                  </button>
+                  <button className="menu-item" onClick={handleDownload}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="7,10 12,15 17,10" />
+                      <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    Export CSV
+                  </button>
+                  <button className="menu-item" onClick={handlePrint}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="6,9 6,2 18,2 18,9" />
+                      <path d="M6,18H4a2,2 0 0,1-2-2V11a2,2 0 0,1,2-2H20a2,2 0 0,1,2,2v5a2,2 0 0,1-2,2H18" />
+                      <polyline points="6,14 18,14 18,22 6,22 6,14" />
+                    </svg>
+                    Print Report
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
