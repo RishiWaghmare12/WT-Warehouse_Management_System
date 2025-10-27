@@ -30,10 +30,10 @@ const SendReceivePage = () => {
     try {
       setLoading(true);
       const response = await warehouseApi.getAllItems();
-      
+
       if (response.success && response.data) {
-        const itemsData = Array.isArray(response.data.data) ? response.data.data : 
-                         Array.isArray(response.data) ? response.data : [];
+        const itemsData = Array.isArray(response.data.data) ? response.data.data :
+          Array.isArray(response.data) ? response.data : [];
         setItems(itemsData);
       } else {
         showError('Failed to fetch items');
@@ -75,15 +75,15 @@ const SendReceivePage = () => {
   const filterItems = () => {
     let filtered = items.filter(item => {
       const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           item.categoryName.toLowerCase().includes(searchTerm.toLowerCase());
+        item.categoryName.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCategory = !selectedCategory || item.categoryId == selectedCategory;
-      
+
       // For send mode, only show items with stock
       // For receive mode, only show items with available space
-      const matchesMode = mode === 'send' ? 
-        item.currentQuantity > 0 : 
+      const matchesMode = mode === 'send' ?
+        item.currentQuantity > 0 :
         item.currentQuantity < item.maxQuantity;
-      
+
       return matchesSearch && matchesCategory && matchesMode;
     });
 
@@ -92,7 +92,7 @@ const SendReceivePage = () => {
 
   const handleItemSelect = (item) => {
     const isSelected = selectedItems.find(selected => selected.item.id === item.id);
-    
+
     if (isSelected) {
       setSelectedItems(prev => prev.filter(selected => selected.item.id !== item.id));
     } else {
@@ -102,9 +102,9 @@ const SendReceivePage = () => {
 
   const updateQuantity = (itemId, quantity) => {
     const numQuantity = Math.max(1, parseInt(quantity) || 1);
-    setSelectedItems(prev => 
-      prev.map(selected => 
-        selected.item.id === itemId 
+    setSelectedItems(prev =>
+      prev.map(selected =>
+        selected.item.id === itemId
           ? { ...selected, quantity: numQuantity }
           : selected
       )
@@ -122,7 +122,7 @@ const SendReceivePage = () => {
         showError(`Cannot send ${selected.quantity} units of ${selected.item.name}. Only ${selected.item.currentQuantity} available.`);
         return false;
       }
-      
+
       if (mode === 'receive') {
         const availableSpace = selected.item.maxQuantity - selected.item.currentQuantity;
         if (selected.quantity > availableSpace) {
@@ -145,15 +145,15 @@ const SendReceivePage = () => {
     try {
       for (const selected of selectedItems) {
         try {
-          const response = mode === 'send' 
+          const response = mode === 'send'
             ? await warehouseApi.sendItems({
-                itemId: selected.item.id,
-                quantity: selected.quantity
-              })
+              itemId: selected.item.id,
+              quantity: selected.quantity
+            })
             : await warehouseApi.receiveExistingItem({
-                itemId: selected.item.id,
-                quantity: selected.quantity
-              });
+              itemId: selected.item.id,
+              quantity: selected.quantity
+            });
 
           if (response.success) {
             successCount++;
@@ -197,19 +197,20 @@ const SendReceivePage = () => {
       <div className="page-header">
         <h1>Inventory Operations</h1>
         <div className="mode-toggle">
-          <button 
+          <button
             className={`mode-btn ${mode === 'send' ? 'active' : ''}`}
             onClick={() => setMode('send')}
           >
             📤 Send Items
           </button>
-          <button 
+          <button
             className={`mode-btn ${mode === 'receive' ? 'active' : ''}`}
             onClick={() => setMode('receive')}
           >
             📥 Receive Items
           </button>
         </div>
+
       </div>
 
       <div className="operations-layout">
@@ -245,7 +246,7 @@ const SendReceivePage = () => {
                 const isSelected = selectedItems.find(selected => selected.item.id === item.id);
                 const itemStatus = getItemStatus(item);
                 const utilization = (item.currentQuantity / item.maxQuantity) * 100;
-                
+
                 return (
                   <div
                     key={item.id}
@@ -256,13 +257,13 @@ const SendReceivePage = () => {
                       <h3>{item.name}</h3>
                       <span className="item-category-badge">{item.categoryName}</span>
                     </div>
-                    
+
                     <div className="item-quantity">
                       <span className="current-quantity">{item.currentQuantity}</span>
                       <span className="quantity-separator"> / </span>
                       <span className="max-quantity">{item.maxQuantity}</span>
                     </div>
-                    
+
                     <ProgressBar
                       current={item.currentQuantity}
                       max={item.maxQuantity}
@@ -270,7 +271,7 @@ const SendReceivePage = () => {
                       size="small"
                       showPercentage={false}
                     />
-                    
+
                     <div className="item-status">
                       <span style={{ color: itemStatus.color }}>
                         {mode === 'send' ? `${item.currentQuantity} available` : `${item.maxQuantity - item.currentQuantity} space`}
@@ -310,7 +311,7 @@ const SendReceivePage = () => {
                     <div key={selected.item.id} className="selected-item">
                       <span className="item-name">{selected.item.name}</span>
                       <span className="item-quantity">×{selected.quantity}</span>
-                      <button 
+                      <button
                         className="remove-btn"
                         onClick={() => handleItemSelect(selected.item)}
                       >
@@ -319,7 +320,7 @@ const SendReceivePage = () => {
                     </div>
                   ))}
                 </div>
-                <button 
+                <button
                   className="batch-action-btn"
                   onClick={handleBatchOperation}
                   disabled={loading}
