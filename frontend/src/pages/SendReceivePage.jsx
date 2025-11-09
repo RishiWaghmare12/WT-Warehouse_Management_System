@@ -193,40 +193,56 @@ const SendReceivePage = () => {
   };
 
   return (
-    <div className="send-receive-page-new">
-      <div className="page-header">
-        <h1>Inventory Operations</h1>
-        <div className="mode-toggle">
+    <div className="send-receive-page-modern">
+      <div className="page-header-modern">
+        <div>
+          <h1>Inventory Operations</h1>
+          <p className="page-description">Send items out or receive items into the warehouse</p>
+        </div>
+        <div className="mode-toggle-modern">
           <button
-            className={`mode-btn ${mode === 'send' ? 'active' : ''}`}
+            className={`mode-btn-modern ${mode === 'send' ? 'active' : ''}`}
             onClick={() => setMode('send')}
           >
-            📤 Send Items
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+            </svg>
+            Send Items
           </button>
           <button
-            className={`mode-btn ${mode === 'receive' ? 'active' : ''}`}
+            className={`mode-btn-modern ${mode === 'receive' ? 'active' : ''}`}
             onClick={() => setMode('receive')}
           >
-            📥 Receive Items
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            Receive Items
           </button>
         </div>
-
       </div>
 
-      <div className="operations-layout">
-        <div className="items-section">
-          <div className="search-filters">
-            <input
-              type="text"
-              placeholder={`Search items to ${mode}...`}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="search-input"
-            />
+      <div className="operations-layout-modern">
+        <div className="items-section-modern">
+          <div className="search-filters-modern">
+            <div className="search-wrapper">
+              <svg className="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
+              </svg>
+              <input
+                type="text"
+                placeholder={`Search items to ${mode}...`}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="search-input-modern"
+              />
+            </div>
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="category-filter"
+              className="category-filter-modern"
             >
               <option value="">All Compartments</option>
               {categories.map(cat => (
@@ -235,7 +251,7 @@ const SendReceivePage = () => {
             </select>
           </div>
 
-          <div className="items-grid">
+          <div className="items-grid-modern">
             {loading ? (
               <div className="loading-state">
                 <div className="loading-spinner"></div>
@@ -250,18 +266,18 @@ const SendReceivePage = () => {
                 return (
                   <div
                     key={item.id}
-                    className={`item-card-selectable ${isSelected ? 'selected' : ''} ${mode === 'send' && item.currentQuantity === 0 ? 'disabled' : ''} ${mode === 'receive' && utilization === 100 ? 'disabled' : ''}`}
+                    className={`item-card-selectable-modern ${isSelected ? 'selected' : ''} ${mode === 'send' && item.currentQuantity === 0 ? 'disabled' : ''} ${mode === 'receive' && utilization === 100 ? 'disabled' : ''}`}
                     onClick={() => handleItemSelect(item)}
                   >
-                    <div className="item-header">
-                      <h3>{item.name}</h3>
-                      <span className="item-category-badge">{item.categoryName}</span>
+                    <div className="item-header-modern">
+                      <h3 className="item-name-compact">{item.name}</h3>
+                      <span className="item-category-badge-compact">{item.categoryName}</span>
                     </div>
 
-                    <div className="item-quantity">
-                      <span className="current-quantity">{item.currentQuantity}</span>
-                      <span className="quantity-separator"> / </span>
-                      <span className="max-quantity">{item.maxQuantity}</span>
+                    <div className="item-quantity-compact">
+                      <span className="current-quantity-compact">{item.currentQuantity}</span>
+                      <span className="quantity-separator-compact">/</span>
+                      <span className="max-quantity-compact">{item.maxQuantity}</span>
                     </div>
 
                     <ProgressBar
@@ -272,14 +288,14 @@ const SendReceivePage = () => {
                       showPercentage={false}
                     />
 
-                    <div className="item-status">
-                      <span style={{ color: itemStatus.color }}>
+                    <div className="item-status-compact">
+                      <span style={{ color: itemStatus.color, fontSize: '0.875rem', fontWeight: '500' }}>
                         {mode === 'send' ? `${item.currentQuantity} available` : `${item.maxQuantity - item.currentQuantity} space`}
                       </span>
                     </div>
 
                     {isSelected && (
-                      <div className="quantity-input" onClick={(e) => e.stopPropagation()}>
+                      <div className="quantity-input-compact" onClick={(e) => e.stopPropagation()}>
                         <label>Quantity:</label>
                         <input
                           type="number"
@@ -294,63 +310,124 @@ const SendReceivePage = () => {
                 );
               })
             ) : (
-              <div className="no-items">
-                No items available for {mode === 'send' ? 'sending' : 'receiving'}
+              <div className="no-items-modern">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M9 12l2 2 4-4" />
+                  <path d="M21 12c-1 0-3-1-3-3s2-3 3-3 3 1 3 3-2 3-3 3" />
+                  <path d="M3 12c1 0 3-1 3-3s-2-3-3-3-3 1-3 3 2 3 3 3" />
+                </svg>
+                <p>No items available for {mode === 'send' ? 'sending' : 'receiving'}</p>
               </div>
             )}
           </div>
         </div>
 
-        <div className="sidebar">
-          <div className="selected-items">
-            <h3>Selected Items ({selectedItems.length})</h3>
+        <div className="sidebar-modern">
+          <div className="selected-items-modern">
+            <h3 className="sidebar-title">
+              Selected Items
+              <span className="count-badge">{selectedItems.length}</span>
+            </h3>
             {selectedItems.length > 0 ? (
               <>
-                <div className="selected-list">
+                <div className="selected-list-modern">
                   {selectedItems.map(selected => (
-                    <div key={selected.item.id} className="selected-item">
-                      <span className="item-name">{selected.item.name}</span>
-                      <span className="item-quantity">×{selected.quantity}</span>
+                    <div key={selected.item.id} className="selected-item-modern">
+                      <div className="selected-item-info">
+                        <span className="item-name-compact">{selected.item.name}</span>
+                        <span className="item-quantity-compact">×{selected.quantity}</span>
+                      </div>
                       <button
-                        className="remove-btn"
-                        onClick={() => handleItemSelect(selected.item)}
+                        className="remove-btn-modern"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleItemSelect(selected.item);
+                        }}
+                        title="Remove item"
+                        aria-label="Remove item"
                       >
-                        ×
+                        <svg 
+                          width="16" 
+                          height="16" 
+                          viewBox="0 0 24 24" 
+                          fill="none" 
+                          stroke="currentColor" 
+                          strokeWidth="2.5" 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round"
+                          style={{ display: 'block' }}
+                        >
+                          <path d="M3 6h18" />
+                          <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                          <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                          <line x1="10" y1="11" x2="10" y2="17" />
+                          <line x1="14" y1="11" x2="14" y2="17" />
+                        </svg>
                       </button>
                     </div>
                   ))}
                 </div>
                 <button
-                  className="batch-action-btn"
+                  className="batch-action-btn-modern"
                   onClick={handleBatchOperation}
                   disabled={loading}
                 >
-                  {loading ? 'Processing...' : `${mode === 'send' ? 'Send' : 'Receive'} All Items`}
+                  {loading ? (
+                    <>
+                      <div className="spinner-small"></div>
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      {mode === 'send' ? (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+                        </svg>
+                      ) : (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                          <polyline points="7 10 12 15 17 10" />
+                          <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                      )}
+                      {mode === 'send' ? 'Send' : 'Receive'} All Items
+                    </>
+                  )}
                 </button>
               </>
             ) : (
-              <p className="no-selection">Select items to {mode}</p>
+              <p className="no-selection-modern">Select items to {mode}</p>
             )}
           </div>
 
-          <div className="recent-transactions">
-            <h3>Recent Activity</h3>
+          <div className="recent-transactions-modern">
+            <h3 className="sidebar-title">Recent Activity</h3>
             {recentTransactions.length > 0 ? (
-              <div className="transaction-list">
+              <div className="transaction-list-modern">
                 {recentTransactions.map(transaction => (
-                  <div key={transaction.id} className="transaction-item">
-                    <span className={`transaction-type ${transaction.type.toLowerCase()}`}>
-                      {transaction.type === 'SEND' ? '📤' : '📥'}
+                  <div key={transaction.id} className="transaction-item-modern">
+                    <span className={`transaction-type-modern ${transaction.type.toLowerCase()}`}>
+                      {transaction.type === 'SEND' ? (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+                        </svg>
+                      ) : (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                          <polyline points="7 10 12 15 17 10" />
+                          <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                      )}
                     </span>
-                    <div className="transaction-details">
-                      <span className="transaction-item-name">{transaction.itemName}</span>
-                      <span className="transaction-quantity">×{transaction.quantity}</span>
+                    <div className="transaction-details-modern">
+                      <span className="transaction-item-name-compact">{transaction.itemName}</span>
+                      <span className="transaction-quantity-compact">×{transaction.quantity}</span>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="no-transactions">No recent activity</p>
+              <p className="no-transactions-modern">No recent activity</p>
             )}
           </div>
         </div>
