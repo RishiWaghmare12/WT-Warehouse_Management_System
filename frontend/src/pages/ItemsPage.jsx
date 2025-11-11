@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import ProgressBar from '../components/Charts/ProgressBar';
 import ItemEditModal from '../components/Modals/ItemEditModal';
 import ItemAddModal from '../components/Modals/ItemAddModal';
+import ConfirmModal from '../components/Modals/ConfirmModal';
 import { useToast } from '../context/ToastContext';
 import { warehouseApi } from '../services/api';
 import { RefreshCw } from 'lucide-react';
@@ -18,6 +19,8 @@ const ItemsPage = () => {
   const [editingItem, setEditingItem] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
   const { showSuccess, showError } = useToast();
 
   useEffect(() => {
@@ -117,6 +120,35 @@ const ItemsPage = () => {
 
   const handleCloseAddModal = () => {
     setIsAddModalOpen(false);
+  };
+
+  const handleDeleteItem = (item) => {
+    setItemToDelete(item);
+    setIsConfirmModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!itemToDelete) return;
+
+    try {
+      const response = await warehouseApi.deleteItem(itemToDelete.id);
+      if (response.success) {
+        setItems(prev => prev.filter(i => i.id !== itemToDelete.id));
+        showSuccess(`Item "${itemToDelete.name}" deleted successfully`);
+      } else {
+        showError(response.error || 'Failed to delete item');
+      }
+    } catch (error) {
+      showError('Failed to delete item');
+    } finally {
+      setIsConfirmModalOpen(false);
+      setItemToDelete(null);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setIsConfirmModalOpen(false);
+    setItemToDelete(null);
   };
 
   return (
@@ -231,17 +263,31 @@ const ItemsPage = () => {
                     <span className="available-space-modern">
                       {item.availableSpace} available
                     </span>
-                    <button 
-                      className="edit-item-icon-btn"
-                      onClick={() => handleEditItem(item)}
-                      title="Edit item"
-                    >
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                      </svg>
-                      <span>Edit</span>
-                    </button>
+                    <div className="item-actions-buttons">
+                      <button 
+                        className="edit-item-icon-btn"
+                        onClick={() => handleEditItem(item)}
+                        title="Edit item"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                        </svg>
+                        <span>Edit</span>
+                      </button>
+                      <button 
+                        className="delete-item-icon-btn"
+                        onClick={() => handleDeleteItem(item)}
+                        title="Delete item"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M3 6h18" />
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                          <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                        </svg>
+                        <span>Delete</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
@@ -269,6 +315,17 @@ const ItemsPage = () => {
         isOpen={isAddModalOpen}
         onClose={handleCloseAddModal}
         onAdd={handleSaveNewItem}
+      />
+
+      <ConfirmModal
+        isOpen={isConfirmModalOpen}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        title="Delete Item"
+        message={`Are you sure you want to delete "${itemToDelete?.name}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        isDanger={true}
       />
     </div>
   );

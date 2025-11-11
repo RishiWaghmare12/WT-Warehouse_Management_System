@@ -197,6 +197,46 @@ class Item {
       throw new Error(`Error checking item space: ${err.message}`);
     }
   }
+
+  // Delete item
+  static async delete(id) {
+    const client = await pool.connect();
+    try {
+      console.log(`Deleting item with ID: ${id}`);
+      await client.query('BEGIN');
+      
+      // Get item details before deletion
+      const itemQuery = await client.query('SELECT * FROM items WHERE item_id = $1', [id]);
+      const item = itemQuery.rows[0];
+      
+      if (!item) {
+        console.log(`Item with ID ${id} not found for deletion`);
+        throw new Error('Item not found');
+      }
+      
+      // Update category capacity (remove current quantity)
+      if (item.current_quantity > 0) {
+        await client.query(`
+          UPDATE categories
+          SET current_capacity = current_capacity - $1
+          WHERE category_id = $2
+        `, [item.current_quantity, item.category_id]);
+      }
+      
+      // Delete the item
+      await client.query('DELETE FROM items WHERE item_id = $1', [id]);
+      
+      await client.query('COMMIT');
+      console.log(`Successfully deleted item: ${item.name} (ID: ${id})`);
+      return item;
+    } catch (err) {
+      await client.query('ROLLBACK');
+      console.error(`Error in Item.delete(${id}):`, err);
+      throw new Error(`Error deleting item: ${err.message}`);
+    } finally {
+      client.release();
+    }
+  }
 }
 
 module.exports = Item;

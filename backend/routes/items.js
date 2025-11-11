@@ -153,4 +153,31 @@ router.post('/', async (req, res) => {
   }
 });
 
+/**
+ * @route   DELETE /api/items/:id
+ * @desc    Delete an item
+ * @access  Public
+ */
+router.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deletedItem = await Item.delete(id);
+    
+    res.json({
+      success: true,
+      message: `Item "${deletedItem.name}" deleted successfully`,
+      data: {
+        id: deletedItem.item_id,
+        name: deletedItem.name
+      }
+    });
+  } catch (error) {
+    console.error(`Error deleting item ${req.params.id}:`, error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 module.exports = router;
