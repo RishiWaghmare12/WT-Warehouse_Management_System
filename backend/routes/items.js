@@ -104,4 +104,53 @@ router.get('/category/:categoryId', async (req, res) => {
   }
 });
 
+/**
+ * @route   POST /api/items
+ * @desc    Create a new item
+ * @access  Public
+ */
+router.post('/', async (req, res) => {
+  try {
+    const { name, categoryId, maxQuantity, initialQuantity } = req.body;
+    
+    // Validation
+    if (!name || !categoryId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Name and category are required'
+      });
+    }
+    
+    const maxQty = maxQuantity || 100;
+    const initialQty = initialQuantity || 0;
+    
+    if (initialQty > maxQty) {
+      return res.status(400).json({
+        success: false,
+        error: 'Initial quantity cannot exceed maximum quantity'
+      });
+    }
+    
+    const newItem = await Item.create(name, categoryId, maxQty, initialQty);
+    
+    res.status(201).json({
+      success: true,
+      data: {
+        id: newItem.item_id,
+        name: newItem.name,
+        categoryId: newItem.category_id,
+        maxQuantity: newItem.max_quantity,
+        currentQuantity: newItem.current_quantity,
+        availableSpace: newItem.max_quantity - newItem.current_quantity
+      }
+    });
+  } catch (error) {
+    console.error('Error creating item:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 module.exports = router;

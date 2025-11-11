@@ -5326,3 +5326,100 @@ div {
     flex: 1;
   }
 }
+
+/* Add Item Button - green for positive action */
+.add-item-button-modern {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.375rem !important;
+    padding: 0.5rem 0.875rem !important;
+    background: var(--success) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 6px !important;
+    font-weight: 500 !important;
+    font-size: 0.8125rem !important;
+    line-height: 1.2 !important;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap !important;
+    height: auto !important;
+    width: auto !important;
+    min-width: unset !important;
+    max-width: none !important;
+    max-height: 36px !important;
+    box-sizing: border-box !important;
+    position: static !important;
+    overflow: visible !important;
+    flex-shrink: 0 !important;
+}
+
+.add-item-button-modern svg {
+    width: 14px !important;
+    height: 14px !important;
+    flex-shrink: 0;
+    display: block;
+}
+
+.add-item-button-modern:hover {
+    background: #22c55e !important;
+    transform: translateY(-1px) !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+
+/* Dark theme add button */
+.dark-theme .add-item-button-modern {
+    background: var(--success) !important;
+    color: white !important;
+}
+
+.dark-theme .add-item-button-modern:hover {
+    background: var(--success-light) !important;
+    color: #0a192f !important;
+}
+
+/* Edit Item Icon Button */
+.edit-item-icon-btn {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 0.375rem 0.625rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    font-weight: 500;
+    width: auto;
+}
+
+.edit-item-icon-btn:hover {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white !important;
+    transform: translateY(-1px);
+}
+
+.edit-item-icon-btn svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+/* Dark theme edit button hover */
+.dark-theme .edit-item-icon-btn:hover {
+    background: var(--primary-light) !important;
+    border-color: var(--primary-light) !important;
+    color: #0a192f !important;
+}
+
+.dark-theme .edit-item-icon-btn:hover svg {
+    stroke: #0a192f !important;
+}
+
+
