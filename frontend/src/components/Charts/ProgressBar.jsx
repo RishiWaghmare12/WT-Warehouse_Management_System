@@ -13,9 +13,9 @@ const ProgressBar = ({
   
   const getColor = () => {
     if (colorScheme === 'stock') {
-      if (percentage < 20) return '#dc3545'; // Red - Low stock
-      if (percentage < 50) return '#ffc107'; // Yellow - Medium stock
-      return '#28a745'; // Green - Good stock
+      if (percentage < 20) return '#dc3545'; // Red - Very low stock
+      if (percentage < 60) return '#ffc107'; // Yellow - Medium stock (20-59%)
+      return '#28a745'; // Green - Good stock (60%+)
     }
     
     if (colorScheme === 'capacity') {

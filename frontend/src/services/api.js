@@ -73,6 +73,24 @@ export const warehouseApi = {
     }
   },
 
+  createItem: async (data) => {
+    try {
+      const response = await apiClient.post('/items', data);
+      return handleResponse(response);
+    } catch (error) {
+      return handleError(error);
+    }
+  },
+
+  deleteItem: async (itemId) => {
+    try {
+      const response = await apiClient.delete(`/items/${itemId}`);
+      return handleResponse(response);
+    } catch (error) {
+      return handleError(error);
+    }
+  },
+
   // Transactions
   getAllTransactions: async () => {
     try {
