@@ -1,4 +1,4 @@
-const { pool } = require('../config/db');
+const { connectDB, getDb } = require('../config/db');
 
 const seedData = {
   categories: [
@@ -48,9 +48,14 @@ const seedData = {
 };
 
 const seedDatabase = async () => {
-  const categoriesCount = await pool.query('SELECT COUNT(*) FROM categories');
-  
-  if (parseInt(categoriesCount.rows[0].count) > 0) {
+  const db = getDb();
+  const categoriesCollection = db.collection('categories');
+  const itemsCollection = db.collection('items');
+  const transactionsCollection = db.collection('transactions');
+
+  // Check if already seeded
+  const count = await categoriesCollection.countDocuments();
+  if (count > 0) {
     console.log('Database already seeded, skipping...');
     return;
   }
@@ -58,47 +63,62 @@ const seedDatabase = async () => {
   console.log('Seeding database with initial data...');
 
   // Insert categories
-  const categoryValues = seedData.categories
-    .map((cat, i) => `('${cat.name}', ${cat.max_capacity}, 0)`)
-    .join(', ');
+  const categoryDocs = seedData.categories.map(cat => ({
+    name: cat.name,
+    max_capacity: cat.max_capacity,
+    current_capacity: 0
+  }));
   
-  await pool.query(`
-    INSERT INTO categories (name, max_capacity, current_capacity) 
-    VALUES ${categoryValues}
-  `);
+  await categoriesCollection.insertMany(categoryDocs);
   console.log('Categories seeded');
 
   // Get inserted categories
-  const categories = await pool.query('SELECT * FROM categories');
+  const categories = await categoriesCollection.find().toArray();
   
   // Insert items for each category
-  for (const category of categories.rows) {
+  for (const category of categories) {
     const items = seedData.items[category.name] || [];
     let categoryCapacity = 0;
     
     for (const item of items) {
-      const newItem = await pool.query(`
-        INSERT INTO items (name, category_id, max_quantity, current_quantity)
-        VALUES ($1, $2, $3, $4)
-        RETURNING *
-      `, [item.name, category.category_id, 100, item.quantity]);
+      const newItem = await itemsCollection.insertOne({
+        name: item.name,
+        category_id: category._id,
+        max_quantity: 100,
+        current_quantity: item.quantity
+      });
       
-      await pool.query(`
-        INSERT INTO transactions (item_id, quantity, transaction_type)
-        VALUES ($1, $2, $3)
-      `, [newItem.rows[0].item_id, item.quantity, 'RECEIVE']);
+      await transactionsCollection.insertOne({
+        item_id: newItem.insertedId,
+        quantity: item.quantity,
+        transaction_type: 'RECEIVE',
+        transaction_date: new Date()
+      });
       
       categoryCapacity += item.quantity;
     }
     
-    await pool.query(`
-      UPDATE categories
-      SET current_capacity = $1
-      WHERE category_id = $2
-    `, [categoryCapacity, category.category_id]);
+    await categoriesCollection.updateOne(
+      { _id: category._id },
+      { $set: { current_capacity: categoryCapacity } }
+    );
   }
   
   console.log('Items and transactions seeded');
 };
 
 module.exports = seedDatabase;
+
+// Run if called directly
+if (require.main === module) {
+  connectDB()
+    .then(() => seedDatabase())
+    .then(() => {
+      console.log('Seeding complete!');
+      process.exit(0);
+    })
+    .catch(err => {
+      console.error('Seeding failed:', err);
+      process.exit(1);
+    });
+}

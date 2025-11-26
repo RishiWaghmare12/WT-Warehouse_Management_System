@@ -1,137 +1,219 @@
-const { pool } = require('../config/db');
+const { ObjectId } = require('mongodb');
+const { getDb } = require('../config/db');
+const Category = require('./Category');
 
 class Item {
-  // Get all items
-  static async getAll() {
-    const result = await pool.query(`
-      SELECT i.*, c.name as category_name 
-      FROM items i
-      JOIN categories c ON i.category_id = c.category_id
-      ORDER BY i.name
-    `);
-    return result.rows;
+  static getCollection() {
+    return getDb().collection('items');
   }
 
-  // Get item by ID
-  static async getById(id) {
-    const result = await pool.query(`
-      SELECT i.*, c.name as category_name 
-      FROM items i
-      JOIN categories c ON i.category_id = c.category_id
-      WHERE i.item_id = $1
-    `, [id]);
-    return result.rows[0] || null;
+  // Get all items with category name
+  static async getAll() {
+    const items = await this.getCollection()
+      .aggregate([
+        {
+          $lookup: {
+            from: 'categories',
+            localField: 'category_id',
+            foreignField: '_id',
+            as: 'category'
+          }
+        },
+        { $unwind: '$category' },
+        {
+          $addFields: {
+            category_name: '$category.name'
+          }
+        },
+        { $project: { category: 0 } },
+        { $sort: { name: 1 } }
+      ])
+      .toArray();
+
+    return items.map(item => ({
+      item_id: item._id.toString(),
+      name: item.name,
+      category_id: item.category_id.toString(),
+      max_quantity: item.max_quantity,
+      current_quantity: item.current_quantity,
+      category_name: item.category_name
+    }));
   }
+
+  // Get item by ID with category name
+  static async getById(id) {
+    let objectId;
+    try {
+      objectId = new ObjectId(id);
+    } catch (err) {
+      return null;
+    }
+
+    const items = await this.getCollection()
+      .aggregate([
+        { $match: { _id: objectId } },
+        {
+          $lookup: {
+            from: 'categories',
+            localField: 'category_id',
+            foreignField: '_id',
+            as: 'category'
+          }
+        },
+        { $unwind: '$category' },
+        {
+          $addFields: {
+            category_name: '$category.name'
+          }
+        },
+        { $project: { category: 0 } }
+      ])
+      .toArray();
+
+    if (items.length === 0) return null;
+
+    const item = items[0];
+    return {
+      item_id: item._id.toString(),
+      name: item.name,
+      category_id: item.category_id.toString(),
+      max_quantity: item.max_quantity,
+      current_quantity: item.current_quantity,
+      category_name: item.category_name
+    };
+  }
+
 
   // Get items by category ID
   static async getByCategoryId(categoryId) {
-    const result = await pool.query(`
-      SELECT i.*, c.name as category_name 
-      FROM items i
-      JOIN categories c ON i.category_id = c.category_id
-      WHERE i.category_id = $1
-      ORDER BY i.name
-    `, [categoryId]);
-    return result.rows;
+    let objectId;
+    try {
+      objectId = new ObjectId(categoryId);
+    } catch (err) {
+      return [];
+    }
+
+    const items = await this.getCollection()
+      .aggregate([
+        { $match: { category_id: objectId } },
+        {
+          $lookup: {
+            from: 'categories',
+            localField: 'category_id',
+            foreignField: '_id',
+            as: 'category'
+          }
+        },
+        { $unwind: '$category' },
+        {
+          $addFields: {
+            category_name: '$category.name'
+          }
+        },
+        { $project: { category: 0 } },
+        { $sort: { name: 1 } }
+      ])
+      .toArray();
+
+    return items.map(item => ({
+      item_id: item._id.toString(),
+      name: item.name,
+      category_id: item.category_id.toString(),
+      max_quantity: item.max_quantity,
+      current_quantity: item.current_quantity,
+      category_name: item.category_name
+    }));
   }
 
-  // Create a new item
+  // Create a new item with atomic category capacity update
   static async create(name, categoryId, maxQuantity = 100, initialQuantity = 0) {
-    const client = await pool.connect();
+    let categoryObjectId;
     try {
-      await client.query('BEGIN');
-      
-      const result = await client.query(`
-        INSERT INTO items (name, category_id, max_quantity, current_quantity) 
-        VALUES ($1, $2, $3, $4) 
-        RETURNING *
-      `, [name, categoryId, maxQuantity, initialQuantity]);
-      
-      if (initialQuantity > 0) {
-        await client.query(`
-          UPDATE categories
-          SET current_capacity = current_capacity + $1
-          WHERE category_id = $2
-        `, [initialQuantity, categoryId]);
-      }
-      
-      await client.query('COMMIT');
-      return result.rows[0];
+      categoryObjectId = new ObjectId(categoryId);
     } catch (err) {
-      await client.query('ROLLBACK');
-      throw err;
-    } finally {
-      client.release();
+      throw new Error('Invalid category ID');
     }
+
+    const newItem = {
+      name,
+      category_id: categoryObjectId,
+      max_quantity: maxQuantity,
+      current_quantity: initialQuantity
+    };
+
+    const result = await this.getCollection().insertOne(newItem);
+
+    if (initialQuantity > 0) {
+      await Category.updateCapacity(categoryId, initialQuantity);
+    }
+
+    return {
+      item_id: result.insertedId.toString(),
+      name: newItem.name,
+      category_id: categoryId,
+      max_quantity: newItem.max_quantity,
+      current_quantity: newItem.current_quantity
+    };
   }
 
-  // Update item quantity (also updates category capacity)
+  // Update item quantity with atomic category capacity update
   static async updateQuantity(id, quantityChange) {
-    const client = await pool.connect();
+    let objectId;
     try {
-      await client.query('BEGIN');
-      
-      const itemQuery = await client.query('SELECT * FROM items WHERE item_id = $1', [id]);
-      const item = itemQuery.rows[0];
-      
-      if (!item) {
-        throw new Error('Item not found');
-      }
-      
-      const result = await client.query(`
-        UPDATE items 
-        SET current_quantity = current_quantity + $1 
-        WHERE item_id = $2 
-        RETURNING *
-      `, [quantityChange, id]);
-      
-      await client.query(`
-        UPDATE categories
-        SET current_capacity = current_capacity + $1
-        WHERE category_id = $2
-      `, [quantityChange, item.category_id]);
-      
-      await client.query('COMMIT');
-      return result.rows[0];
+      objectId = new ObjectId(id);
     } catch (err) {
-      await client.query('ROLLBACK');
-      throw err;
-    } finally {
-      client.release();
+      throw new Error('Invalid item ID');
     }
+
+    const item = await this.getCollection().findOne({ _id: objectId });
+    if (!item) {
+      throw new Error('Item not found');
+    }
+
+    await this.getCollection().updateOne(
+      { _id: objectId },
+      { $inc: { current_quantity: quantityChange } }
+    );
+
+    await Category.updateCapacity(item.category_id.toString(), quantityChange);
+
+    const updatedItem = await this.getCollection().findOne({ _id: objectId });
+    return {
+      item_id: updatedItem._id.toString(),
+      name: updatedItem.name,
+      category_id: updatedItem.category_id.toString(),
+      max_quantity: updatedItem.max_quantity,
+      current_quantity: updatedItem.current_quantity
+    };
   }
 
-  // Delete item (also updates category capacity)
+  // Delete item with atomic category capacity adjustment
   static async delete(id) {
-    const client = await pool.connect();
+    let objectId;
     try {
-      await client.query('BEGIN');
-      
-      const itemQuery = await client.query('SELECT * FROM items WHERE item_id = $1', [id]);
-      const item = itemQuery.rows[0];
-      
-      if (!item) {
-        throw new Error('Item not found');
-      }
-      
-      if (item.current_quantity > 0) {
-        await client.query(`
-          UPDATE categories
-          SET current_capacity = current_capacity - $1
-          WHERE category_id = $2
-        `, [item.current_quantity, item.category_id]);
-      }
-      
-      await client.query('DELETE FROM items WHERE item_id = $1', [id]);
-      
-      await client.query('COMMIT');
-      return item;
+      objectId = new ObjectId(id);
     } catch (err) {
-      await client.query('ROLLBACK');
-      throw err;
-    } finally {
-      client.release();
+      throw new Error('Invalid item ID');
     }
+
+    const item = await this.getCollection().findOne({ _id: objectId });
+    if (!item) {
+      throw new Error('Item not found');
+    }
+
+    if (item.current_quantity > 0) {
+      await Category.updateCapacity(item.category_id.toString(), -item.current_quantity);
+    }
+
+    await this.getCollection().deleteOne({ _id: objectId });
+
+    return {
+      item_id: item._id.toString(),
+      name: item.name,
+      category_id: item.category_id.toString(),
+      max_quantity: item.max_quantity,
+      current_quantity: item.current_quantity
+    };
   }
 }
 

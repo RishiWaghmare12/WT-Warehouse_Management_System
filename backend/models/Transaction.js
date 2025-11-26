@@ -1,26 +1,80 @@
-const { pool } = require('../config/db');
+const { ObjectId } = require('mongodb');
+const { getDb } = require('../config/db');
 
 class Transaction {
-  // Create a new transaction
-  static async create(itemId, quantity, type) {
-    const result = await pool.query(`
-      INSERT INTO transactions (item_id, quantity, transaction_type) 
-      VALUES ($1, $2, $3) 
-      RETURNING *
-    `, [itemId, quantity, type]);
-    return result.rows[0];
+  static getCollection() {
+    return getDb().collection('transactions');
   }
 
-  // Get all transactions
+  // Create a new transaction
+  static async create(itemId, quantity, type) {
+    let itemObjectId;
+    try {
+      itemObjectId = new ObjectId(itemId);
+    } catch (err) {
+      throw new Error('Invalid item ID');
+    }
+
+    const newTransaction = {
+      item_id: itemObjectId,
+      quantity,
+      transaction_type: type,
+      transaction_date: new Date()
+    };
+
+    const result = await this.getCollection().insertOne(newTransaction);
+
+    return {
+      transaction_id: result.insertedId.toString(),
+      item_id: itemId,
+      quantity: newTransaction.quantity,
+      transaction_type: newTransaction.transaction_type,
+      transaction_date: newTransaction.transaction_date
+    };
+  }
+
+  // Get all transactions with item and category names, sorted by date descending
   static async getAll() {
-    const result = await pool.query(`
-      SELECT t.*, i.name as item_name, c.name as category_name 
-      FROM transactions t
-      JOIN items i ON t.item_id = i.item_id
-      JOIN categories c ON i.category_id = c.category_id
-      ORDER BY t.transaction_date DESC
-    `);
-    return result.rows;
+    const transactions = await this.getCollection()
+      .aggregate([
+        {
+          $lookup: {
+            from: 'items',
+            localField: 'item_id',
+            foreignField: '_id',
+            as: 'item'
+          }
+        },
+        { $unwind: '$item' },
+        {
+          $lookup: {
+            from: 'categories',
+            localField: 'item.category_id',
+            foreignField: '_id',
+            as: 'category'
+          }
+        },
+        { $unwind: '$category' },
+        {
+          $addFields: {
+            item_name: '$item.name',
+            category_name: '$category.name'
+          }
+        },
+        { $project: { item: 0, category: 0 } },
+        { $sort: { transaction_date: -1 } }
+      ])
+      .toArray();
+
+    return transactions.map(t => ({
+      transaction_id: t._id.toString(),
+      item_id: t.item_id.toString(),
+      quantity: t.quantity,
+      transaction_type: t.transaction_type,
+      transaction_date: t.transaction_date,
+      item_name: t.item_name,
+      category_name: t.category_name
+    }));
   }
 }
 

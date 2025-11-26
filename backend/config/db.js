@@ -1,53 +1,52 @@
-const { Pool } = require("pg");
+const { MongoClient } = require("mongodb");
 require("dotenv").config();
 
-let pool;
+let client = null;
+let db = null;
 
-function getPool() {
-  if (!pool) {
-    pool = new Pool({
-      connectionString: process.env.POSTGRES_URI,
-      max: 1,
-      connectionTimeoutMillis: 5000,
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-    });
-    
-    pool.on('error', (err) => {
-      console.error('Unexpected PostgreSQL error:', err);
-      pool = null;
-    });
-  }
+const connectDB = async (retries = 3) => {
+  const uri = process.env.MONGODB_URI;
   
-  return pool;
-}
-
-const connectDB = async () => {
-  try {
-    const client = await getPool().connect();
-    console.log("PostgreSQL connected successfully");
-    client.release();
-    return;
-  } catch (err) {
-    console.error("PostgreSQL connection error:", err.message);
+  if (!uri) {
+    console.error("MONGODB_URI environment variable is not set");
+    throw new Error("MONGODB_URI environment variable is not set");
   }
-};
 
-const runQuery = async (queryText, params, retries = 2) => {
-  for (let attempt = 0; attempt <= retries; attempt++) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
     try {
-      const client = await getPool().connect();
-      try {
-        const result = await client.query(queryText, params);
-        return result;
-      } finally {
-        client.release();
-      }
+      client = new MongoClient(uri);
+      await client.connect();
+      db = client.db();
+      console.log("MongoDB connected successfully");
+      return;
     } catch (err) {
-      if (attempt === retries) throw err;
-      console.error(`Query attempt ${attempt + 1} failed: ${err.message}. Retrying...`);
-      await new Promise(r => setTimeout(r, 100 * Math.pow(2, attempt)));
+      console.error(`MongoDB connection attempt ${attempt} failed:`, err.message);
+      
+      if (attempt === retries) {
+        console.error("MongoDB connection failed after all retries");
+        throw err;
+      }
+      
+      // Exponential backoff before retry
+      const delay = 1000 * Math.pow(2, attempt - 1);
+      console.log(`Retrying in ${delay}ms...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
 };
 
-module.exports = { connectDB, pool: getPool(), runQuery };
+const getDb = () => {
+  if (!db) {
+    throw new Error("Database not initialized. Call connectDB() first.");
+  }
+  return db;
+};
+
+const getClient = () => {
+  if (!client) {
+    throw new Error("Client not initialized. Call connectDB() first.");
+  }
+  return client;
+};
+
+module.exports = { connectDB, getDb, getClient };
