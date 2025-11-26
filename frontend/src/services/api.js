@@ -55,24 +55,6 @@ export const warehouseApi = {
     }
   },
 
-  getItemById: async (itemId) => {
-    try {
-      const response = await apiClient.get(`/items/${itemId}`);
-      return handleResponse(response);
-    } catch (error) {
-      return handleError(error);
-    }
-  },
-
-  getItemsByCategory: async (categoryId) => {
-    try {
-      const response = await apiClient.get(`/items/category/${categoryId}`);
-      return handleResponse(response);
-    } catch (error) {
-      return handleError(error);
-    }
-  },
-
   createItem: async (data) => {
     try {
       const response = await apiClient.post('/items', data);
@@ -95,24 +77,6 @@ export const warehouseApi = {
   getAllTransactions: async () => {
     try {
       const response = await apiClient.get('/transactions');
-      return handleResponse(response);
-    } catch (error) {
-      return handleError(error);
-    }
-  },
-
-  getTransactionsByItem: async (itemId) => {
-    try {
-      const response = await apiClient.get(`/transactions/item/${itemId}`);
-      return handleResponse(response);
-    } catch (error) {
-      return handleError(error);
-    }
-  },
-
-  getTransactionsByType: async (type) => {
-    try {
-      const response = await apiClient.get(`/transactions/type/${type}`);
       return handleResponse(response);
     } catch (error) {
       return handleError(error);
@@ -153,15 +117,6 @@ export const warehouseApi = {
   getWarehouseReport: async () => {
     try {
       const response = await apiClient.get('/compartments');
-      return handleResponse(response);
-    } catch (error) {
-      return handleError(error);
-    }
-  },
-
-  getAvailableSpace: async () => {
-    try {
-      const response = await apiClient.get('/compartments/available');
       return handleResponse(response);
     } catch (error) {
       return handleError(error);
