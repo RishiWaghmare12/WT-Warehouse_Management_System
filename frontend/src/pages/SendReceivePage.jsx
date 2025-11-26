@@ -1,76 +1,31 @@
-import React, { useState, useEffect } from 'react';
-import { useToast } from '../context/ToastContext';
+import { useState, useEffect } from 'react';
+import { useToast } from '../hooks/useToast';
 import ProgressBar from '../components/Charts/ProgressBar';
+import { useItems } from '../hooks/useItems';
+import { useCompartments } from '../hooks/useCompartments';
+import { useTransactions } from '../hooks/useTransactions';
 import { warehouseApi } from '../services/api';
+import { calculateUtilization, getAvailableSpace } from '../utils/calculations';
+import { getStockStatusColor, STATUS_COLORS } from '../utils/statusHelpers';
 import '../App.css';
 
 const SendReceivePage = () => {
-  const [items, setItems] = useState([]);
+  const { items, loading, refetch: fetchItems } = useItems();
+  const { compartments: categories } = useCompartments();
+  const { transactions, refetch: fetchRecentTransactions } = useTransactions();
   const [filteredItems, setFilteredItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
-  const [categories, setCategories] = useState([]);
   const [mode, setMode] = useState('send'); // 'send' or 'receive'
-  const [loading, setLoading] = useState(false);
-  const [recentTransactions, setRecentTransactions] = useState([]);
   const { showSuccess, showError, showWarning } = useToast();
 
-  useEffect(() => {
-    fetchItems();
-    fetchCategories();
-    fetchRecentTransactions();
-  }, []);
+  const recentTransactions = transactions.slice(0, 5);
 
   useEffect(() => {
     filterItems();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items, searchTerm, selectedCategory, mode]);
-
-  const fetchItems = async () => {
-    try {
-      setLoading(true);
-      const response = await warehouseApi.getAllItems();
-
-      if (response.success && response.data) {
-        const itemsData = Array.isArray(response.data.data) ? response.data.data :
-          Array.isArray(response.data) ? response.data : [];
-        setItems(itemsData);
-      } else {
-        showError('Failed to fetch items');
-        setItems([]);
-      }
-    } catch (err) {
-      console.error('Error fetching items:', err);
-      showError('Failed to fetch items');
-      setItems([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchCategories = async () => {
-    try {
-      const response = await warehouseApi.getCompartments();
-      if (response.success) {
-        const categoriesData = response.data.data || response.data;
-        setCategories(categoriesData);
-      }
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-    }
-  };
-
-  const fetchRecentTransactions = async () => {
-    try {
-      const response = await warehouseApi.getAllTransactions();
-      if (response.success) {
-        const transactionsData = response.data.data || response.data;
-        setRecentTransactions(transactionsData.slice(0, 5)); // Last 5 transactions
-      }
-    } catch (error) {
-      console.error('Error fetching transactions:', error);
-    }
-  };
 
   const filterItems = () => {
     let filtered = items.filter(item => {
@@ -124,7 +79,7 @@ const SendReceivePage = () => {
       }
 
       if (mode === 'receive') {
-        const availableSpace = selected.item.maxQuantity - selected.item.currentQuantity;
+        const availableSpace = getAvailableSpace(selected.item.currentQuantity, selected.item.maxQuantity);
         if (selected.quantity > availableSpace) {
           showError(`Cannot receive ${selected.quantity} units of ${selected.item.name}. Only ${availableSpace} space available.`);
           return false;
@@ -138,7 +93,6 @@ const SendReceivePage = () => {
   const handleBatchOperation = async () => {
     if (!validateOperation()) return;
 
-    setLoading(true);
     let successCount = 0;
     let failCount = 0;
 
@@ -160,7 +114,7 @@ const SendReceivePage = () => {
           } else {
             failCount++;
           }
-        } catch (error) {
+        } catch {
           failCount++;
         }
       }
@@ -176,20 +130,16 @@ const SendReceivePage = () => {
         showError(`Failed to process ${failCount} item(s)`);
       }
 
-    } catch (error) {
+    } catch {
       showError(`Failed to ${mode} items`);
-    } finally {
-      setLoading(false);
     }
   };
 
   const getItemStatus = (item) => {
-    const utilization = (item.currentQuantity / item.maxQuantity) * 100;
-    if (utilization === 0) return { status: 'empty', color: '#dc3545' };
-    if (utilization < 20) return { status: 'low', color: '#dc3545' };
-    if (utilization < 60) return { status: 'medium', color: '#ffc107' };
-    if (utilization === 100) return { status: 'full', color: '#6c757d' };
-    return { status: 'good', color: '#28a745' };
+    const utilization = calculateUtilization(item.currentQuantity, item.maxQuantity);
+    if (utilization === 0) return { status: 'empty', color: STATUS_COLORS.LOW };
+    if (utilization === 100) return { status: 'full', color: STATUS_COLORS.FULL };
+    return { status: 'normal', color: getStockStatusColor(utilization) };
   };
 
   return (
@@ -261,7 +211,8 @@ const SendReceivePage = () => {
               filteredItems.map(item => {
                 const isSelected = selectedItems.find(selected => selected.item.id === item.id);
                 const itemStatus = getItemStatus(item);
-                const utilization = (item.currentQuantity / item.maxQuantity) * 100;
+                const utilization = calculateUtilization(item.currentQuantity, item.maxQuantity);
+                const availableSpace = getAvailableSpace(item.currentQuantity, item.maxQuantity);
 
                 return (
                   <div
@@ -290,7 +241,7 @@ const SendReceivePage = () => {
 
                     <div className="item-status-compact">
                       <span style={{ color: itemStatus.color, fontSize: '0.875rem', fontWeight: '500' }}>
-                        {mode === 'send' ? `${item.currentQuantity} available` : `${item.maxQuantity - item.currentQuantity} space`}
+                        {mode === 'send' ? `${item.currentQuantity} available` : `${availableSpace} space`}
                       </span>
                     </div>
 

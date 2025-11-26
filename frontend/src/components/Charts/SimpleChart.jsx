@@ -1,4 +1,3 @@
-import React from "react";
 import "./Charts.css";
 
 const SimpleChart = ({ data, type = "bar", title, height = 200 }) => {

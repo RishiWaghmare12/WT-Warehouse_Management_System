@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { useToast } from "../../context/ToastContext";
+import { useState, useEffect } from "react";
+import { useToast } from "../../hooks/useToast";
 import { warehouseApi } from "../../services/api";
 import "./Modal.css";
 
@@ -86,7 +86,7 @@ const ItemAddModal = ({ isOpen, onClose, onAdd }) => {
             } else {
                 showError(response.error || "Failed to create item");
             }
-        } catch (error) {
+        } catch {
             showError("Failed to create item");
         } finally {
             setLoading(false);

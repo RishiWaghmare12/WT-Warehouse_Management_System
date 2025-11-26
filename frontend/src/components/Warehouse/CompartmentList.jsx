@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import Compartment from './Compartment';
 import { warehouseApi } from '../../services/api';
 

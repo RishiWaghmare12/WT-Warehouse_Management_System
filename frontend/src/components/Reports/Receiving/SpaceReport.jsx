@@ -1,5 +1,3 @@
-import React from 'react';
-
 const SpaceReport = ({ report }) => {
   const { hasSpace, item, compartments, surplus, remainingSpace } = report;
 

@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { useToast } from '../context/ToastContext';
+import { useState, useEffect } from 'react';
+import { useToast } from '../hooks/useToast';
 import { warehouseApi } from '../services/api';
 import { Calendar } from 'lucide-react';
+import { formatDate } from '../utils/calculations';
 import '../App.css';
 
 const TransactionsPage = () => {
@@ -17,10 +18,12 @@ const TransactionsPage = () => {
 
   useEffect(() => {
     fetchTransactions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     filterTransactions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transactions, searchTerm, typeFilter, dateFrom, dateTo]);
 
   useEffect(() => {
@@ -95,10 +98,6 @@ const TransactionsPage = () => {
     });
 
     setFilteredTransactions(filtered);
-  };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString();
   };
 
   const handleRefresh = () => {

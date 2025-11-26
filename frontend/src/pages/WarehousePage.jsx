@@ -1,4 +1,3 @@
-import React from 'react';
 import CompartmentList from '../components/Warehouse/CompartmentList';
 
 const WarehousePage = () => {

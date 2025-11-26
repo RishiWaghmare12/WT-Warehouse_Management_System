@@ -1,5 +1,6 @@
-import React from 'react';
 import './Charts.css';
+import { calculateUtilization } from '../../utils/calculations';
+import { getStockStatusColor, getCapacityStatusColor } from '../../utils/statusHelpers';
 
 const ProgressBar = ({ 
   current, 
@@ -9,19 +10,15 @@ const ProgressBar = ({
   size = 'medium',
   colorScheme = 'default' 
 }) => {
-  const percentage = Math.round((current / max) * 100);
+  const percentage = calculateUtilization(current, max);
   
   const getColor = () => {
     if (colorScheme === 'stock') {
-      if (percentage < 20) return '#dc3545'; // Red - Very low stock
-      if (percentage < 60) return '#ffc107'; // Yellow - Medium stock (20-59%)
-      return '#28a745'; // Green - Good stock (60%+)
+      return getStockStatusColor(percentage);
     }
     
     if (colorScheme === 'capacity') {
-      if (percentage > 90) return '#dc3545'; // Red - Almost full
-      if (percentage > 70) return '#ffc107'; // Yellow - Getting full
-      return '#28a745'; // Green - Good capacity
+      return getCapacityStatusColor(percentage);
     }
     
     return 'var(--primary)'; // Default blue

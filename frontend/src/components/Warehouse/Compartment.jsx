@@ -1,8 +1,9 @@
-import React from 'react';
 import ProgressBar from '../Charts/ProgressBar';
+import { calculateUtilization, getAvailableSpace } from '../../utils/calculations';
 
 const Compartment = ({ id, name, capacity, currentItems, items = [], isExpanded, onToggleExpanded }) => {
-  const occupancyPercentage = (currentItems / capacity) * 100;
+  const occupancyPercentage = calculateUtilization(currentItems, capacity);
+  const availableSpace = getAvailableSpace(currentItems, capacity);
 
   return (
     <div className={`compartment ${isExpanded ? 'expanded' : ''}`} onClick={() => onToggleExpanded(id)}>
@@ -21,11 +22,11 @@ const Compartment = ({ id, name, capacity, currentItems, items = [], isExpanded,
       <div className="compartment-info">
         <p>Total Capacity: {capacity}</p>
         <p>Space Used: {currentItems}</p>
-        <p>Available Space: {capacity - currentItems}</p>
+        <p>Available Space: {availableSpace}</p>
         <ProgressBar
           current={currentItems}
           max={capacity}
-          label={`Utilization: ${occupancyPercentage.toFixed(1)}%`}
+          label={`Utilization: ${occupancyPercentage}%`}
           colorScheme="capacity"
           size="medium"
         />
@@ -35,9 +36,7 @@ const Compartment = ({ id, name, capacity, currentItems, items = [], isExpanded,
         <div className="items-list" onClick={(e) => e.stopPropagation()}>
           <h4>Items in Compartment:</h4>
           <div className="items-grid">
-            {items.map(item => {
-              const itemOccupancy = (item.current_quantity / item.max_quantity) * 100;
-              return (
+            {items.map(item => (
                 <div key={item.item_id} className="item-card">
                   <h5>{item.name}</h5>
                   <p>ID: {item.item_id}</p>
@@ -50,8 +49,7 @@ const Compartment = ({ id, name, capacity, currentItems, items = [], isExpanded,
                     size="small"
                   />
                 </div>
-              );
-            })}
+            ))}
           </div>
         </div>
       )}

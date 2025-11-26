@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { useToast } from '../context/ToastContext';
+import { useState, useEffect } from 'react';
+import { useToast } from '../hooks/useToast';
 import { warehouseApi } from '../services/api';
+import { formatDateShort } from '../utils/calculations';
 import '../App.css';
 
 const ReceivingPage = () => {
@@ -19,6 +20,7 @@ const ReceivingPage = () => {
     fetchItems();
     fetchCategories();
     fetchRecentTransactions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchItems = async () => {
@@ -126,7 +128,7 @@ const ReceivingPage = () => {
       } else {
         showError(response.error || 'Failed to receive items');
       }
-    } catch (error) {
+    } catch {
       showError('Failed to receive items');
     } finally {
       setLoading(false);
@@ -259,7 +261,7 @@ const ReceivingPage = () => {
                       <span className="transaction-item-name">{transaction.itemName}</span>
                       <span className="transaction-quantity">×{transaction.quantity}</span>
                       <span className="transaction-date">
-                        {new Date(transaction.createdAt).toLocaleDateString()}
+                        {formatDateShort(transaction.createdAt)}
                       </span>
                     </div>
                   </div>

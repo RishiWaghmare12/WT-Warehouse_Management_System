@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { useToast } from "../../context/ToastContext";
+import { useState, useEffect } from "react";
+import { useToast } from "../../hooks/useToast";
 import { warehouseApi } from "../../services/api";
 import "./Modal.css";
 
@@ -62,7 +62,7 @@ const ItemEditModal = ({ item, isOpen, onClose, onSave }) => {
                 categoryId: formData.categoryId,
             });
             onClose();
-        } catch (error) {
+        } catch {
             showError("Failed to update item");
         } finally {
             setLoading(false);

@@ -1,18 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import ProgressBar from '../components/Charts/ProgressBar';
 import ItemEditModal from '../components/Modals/ItemEditModal';
 import ItemAddModal from '../components/Modals/ItemAddModal';
 import ConfirmModal from '../components/Modals/ConfirmModal';
-import { useToast } from '../context/ToastContext';
+import { useToast } from '../hooks/useToast';
+import { useItems } from '../hooks/useItems';
+import { useCompartments } from '../hooks/useCompartments';
 import { warehouseApi } from '../services/api';
+import { calculateUtilization } from '../utils/calculations';
+import { getStockStatusColor, isLowStock } from '../utils/statusHelpers';
 import { RefreshCw } from 'lucide-react';
 import '../App.css';
 
 const ItemsPage = () => {
-  const [items, setItems] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const { items, loading, refetch: fetchItems } = useItems();
+  const { compartments: categories } = useCompartments();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [showLowStock, setShowLowStock] = useState(false);
@@ -21,71 +23,17 @@ const ItemsPage = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
-  const { showSuccess, showError } = useToast();
-
-  useEffect(() => {
-    fetchItems();
-    fetchCategories();
-  }, []);
-
-  const fetchItems = async () => {
-    try {
-      setLoading(true);
-      const response = await warehouseApi.getAllItems();
-
-      if (response.success && response.data) {
-        const itemsData = response.data.data || response.data;
-        if (Array.isArray(itemsData)) {
-          setItems(itemsData);
-          setError('');
-        } else {
-          setItems([]);
-          setError('Invalid data format received');
-        }
-      } else {
-        setError('Failed to fetch items');
-        setItems([]);
-      }
-    } catch (err) {
-      console.error('Error fetching items:', err);
-      setError('Failed to fetch items');
-      setItems([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchCategories = async () => {
-    try {
-      const response = await warehouseApi.getCompartments();
-      if (response.success && response.data) {
-        const categoriesData = response.data.data || response.data;
-        if (Array.isArray(categoriesData)) {
-          setCategories(categoriesData);
-        }
-      }
-    } catch (err) {
-      console.error('Error fetching categories:', err);
-    }
-  };
-
-  const getUtilizationColor = (percentage) => {
-    if (percentage < 20) return '#dc3545'; // Red for low stock
-    if (percentage < 50) return '#ffc107'; // Yellow for medium stock
-    return '#28a745'; // Green for good stock
-  };
+  const { showSuccess, showError: showErrorToast } = useToast();
 
   // Client-side filtering - fast and efficient for warehouse data
   const filteredItems = items.filter(item => {
-    const utilizationPercentage = (item.currentQuantity / item.maxQuantity) * 100;
-    
     const matchesSearch = searchTerm === '' || 
       item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.categoryName.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesCategory = selectedCategory === '' || item.categoryId == selectedCategory;
     
-    const matchesLowStock = !showLowStock || utilizationPercentage < 20;
+    const matchesLowStock = !showLowStock || isLowStock(item.currentQuantity, item.maxQuantity);
     
     return matchesSearch && matchesCategory && matchesLowStock;
   });
@@ -96,10 +44,8 @@ const ItemsPage = () => {
   };
 
   const handleSaveItem = (updatedItem) => {
-    // Update the items list with the edited item
-    setItems(prev => prev.map(item => 
-      item.id === updatedItem.id ? updatedItem : item
-    ));
+    // Refetch items to get updated data
+    fetchItems();
     showSuccess(`Item "${updatedItem.name}" updated successfully`);
   };
 
@@ -113,8 +59,8 @@ const ItemsPage = () => {
   };
 
   const handleSaveNewItem = (newItem) => {
-    // Add the new item to the list
-    setItems(prev => [...prev, newItem]);
+    // Refetch items to get updated data
+    fetchItems();
     showSuccess(`Item "${newItem.name}" created successfully`);
   };
 
@@ -133,13 +79,13 @@ const ItemsPage = () => {
     try {
       const response = await warehouseApi.deleteItem(itemToDelete.id);
       if (response.success) {
-        setItems(prev => prev.filter(i => i.id !== itemToDelete.id));
+        fetchItems();
         showSuccess(`Item "${itemToDelete.name}" deleted successfully`);
       } else {
-        showError(response.error || 'Failed to delete item');
+        showErrorToast(response.error || 'Failed to delete item');
       }
-    } catch (error) {
-      showError('Failed to delete item');
+    } catch {
+      showErrorToast('Failed to delete item');
     } finally {
       setIsConfirmModalOpen(false);
       setItemToDelete(null);
@@ -217,22 +163,12 @@ const ItemsPage = () => {
           <div className="loading-spinner"></div>
           <p>Loading items...</p>
         </div>
-      ) : error ? (
-        <div className="error-report">
-          <h3>Error Loading Items</h3>
-          <p>{error}</p>
-          <button onClick={fetchItems}>Try Again</button>
-        </div>
       ) : (
         <div className="items-grid-modern">
           {filteredItems.length > 0 ? (
             filteredItems.map(item => {
-              const utilizationPercentage = Math.round((item.currentQuantity / item.maxQuantity) * 100);
-              const getStatusColor = () => {
-                if (utilizationPercentage < 20) return '#ef4444';
-                if (utilizationPercentage < 50) return '#f59e0b';
-                return '#22c55e';
-              };
+              const utilizationPercentage = calculateUtilization(item.currentQuantity, item.maxQuantity);
+              const statusColor = getStockStatusColor(utilizationPercentage);
               return (
                 <div key={item.id} className="item-card-modern">
                   <div className="item-card-header">
@@ -246,7 +182,7 @@ const ItemsPage = () => {
                       <span className="quantity-separator-modern">/</span>
                       <span className="max-quantity-modern">{item.maxQuantity}</span>
                     </div>
-                    <div className="utilization-badge" style={{ backgroundColor: `${getStatusColor()}15`, color: getStatusColor() }}>
+                    <div className="utilization-badge" style={{ backgroundColor: `${statusColor}15`, color: statusColor }}>
                       {utilizationPercentage}%
                     </div>
                   </div>

@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import HomePage from './pages/HomePage';
@@ -7,8 +6,8 @@ import ItemsPage from './pages/ItemsPage';
 import SendReceivePage from './pages/SendReceivePage';
 import TransactionsPage from './pages/TransactionsPage';
 import ToastContainer from './components/Toast/ToastContainer';
-import { ThemeProvider } from './context/ThemeContext';
-import { ToastProvider } from './context/ToastContext';
+import { ThemeProvider } from './context/ThemeContext.jsx';
+import { ToastProvider } from './context/ToastContext.jsx';
 import './App.css';
 
 function App() {

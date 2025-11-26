@@ -1,4 +1,3 @@
-import React from 'react';
 import ProgressBar from '../Charts/ProgressBar';
 import './Dashboard.css';
 

@@ -1,5 +1,3 @@
-import React from 'react';
-
 const InventoryReport = ({ report }) => {
   const { hasStock, item, availableItems, difference, compartmentInventory } = report;
 
