@@ -18,7 +18,7 @@ const Compartment = ({ id, name, capacity, currentItems, items = [], isExpanded,
           </svg>
         </button>
       )}
-      <h3>{name} (Compartment {id})</h3>
+      <h3>{name}</h3>
       <div className="compartment-info">
         <p>Total Capacity: {capacity}</p>
         <p>Space Used: {currentItems}</p>
@@ -39,7 +39,6 @@ const Compartment = ({ id, name, capacity, currentItems, items = [], isExpanded,
             {items.map(item => (
                 <div key={item.item_id} className="item-card">
                   <h5>{item.name}</h5>
-                  <p>ID: {item.item_id}</p>
                   <p>Current Quantity: {item.current_quantity}</p>
                   <p>Maximum Capacity: {item.max_quantity}</p>
                   <ProgressBar

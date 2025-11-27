@@ -1,5 +1,5 @@
 const express = require('express');
-const { pool } = require('../config/db');
+const mongoose = require('mongoose');
 
 const compartmentRoutes = require('./compartments');
 const itemRoutes = require('./items');
@@ -22,11 +22,13 @@ router.get('/', (req, res) => {
 // Health check route
 router.get('/health', async (req, res) => {
   try {
-    const result = await pool.query('SELECT NOW()');
+    const state = mongoose.connection.readyState;
+    const isConnected = state === 1;
+    
     res.json({
-      status: 'healthy',
-      dbConnection: 'connected',
-      timestamp: result.rows[0].now
+      status: isConnected ? 'healthy' : 'unhealthy',
+      dbConnection: isConnected ? 'connected' : 'disconnected',
+      timestamp: new Date().toISOString()
     });
   } catch (error) {
     res.status(500).json({

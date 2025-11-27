@@ -1,27 +1,7 @@
-const { connectDB, getDb } = require('../config/db');
 const seedDatabase = require('./seed');
 
 const initDB = async () => {
   try {
-    await connectDB();
-    const db = getDb();
-
-    console.log('Setting up MongoDB collections and indexes...');
-
-    // Create categories collection with unique name index
-    const categoriesCollection = db.collection('categories');
-    await categoriesCollection.createIndex({ name: 1 }, { unique: true });
-
-    // Create items collection with indexes
-    const itemsCollection = db.collection('items');
-    await itemsCollection.createIndex({ category_id: 1 });
-    await itemsCollection.createIndex({ name: 1, category_id: 1 }, { unique: true });
-
-    // Create transactions collection with indexes
-    const transactionsCollection = db.collection('transactions');
-    await transactionsCollection.createIndex({ item_id: 1 });
-    await transactionsCollection.createIndex({ transaction_date: -1 });
-    await transactionsCollection.createIndex({ transaction_type: 1 });
 
     console.log('Database schema initialized');
 

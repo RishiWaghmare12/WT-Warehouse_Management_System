@@ -1,4 +1,7 @@
-const { connectDB, getDb } = require('../config/db');
+const { connectDB } = require('../config/db');
+const Category = require('../models/Category');
+const Item = require('../models/Item');
+const Transaction = require('../models/Transaction');
 
 const seedData = {
   categories: [
@@ -48,75 +51,56 @@ const seedData = {
 };
 
 const seedDatabase = async () => {
-  const db = getDb();
-  const categoriesCollection = db.collection('categories');
-  const itemsCollection = db.collection('items');
-  const transactionsCollection = db.collection('transactions');
-
-  // Check if already seeded
-  const count = await categoriesCollection.countDocuments();
+  const count = await Category.countDocuments();
   if (count > 0) {
     console.log('Database already seeded, skipping...');
     return;
   }
 
-  console.log('Seeding database with initial data...');
+  console.log('Seeding database...');
 
-  // Insert categories
-  const categoryDocs = seedData.categories.map(cat => ({
-    name: cat.name,
-    max_capacity: cat.max_capacity,
-    current_capacity: 0
-  }));
-  
-  await categoriesCollection.insertMany(categoryDocs);
-  console.log('Categories seeded');
+  const categoryDocs = await Category.insertMany(
+    seedData.categories.map(cat => ({
+      name: cat.name,
+      max_capacity: cat.max_capacity,
+      current_capacity: 0
+    }))
+  );
 
-  // Get inserted categories
-  const categories = await categoriesCollection.find().toArray();
-  
-  // Insert items for each category
-  for (const category of categories) {
+  for (const category of categoryDocs) {
     const items = seedData.items[category.name] || [];
     let categoryCapacity = 0;
-    
-    for (const item of items) {
-      const newItem = await itemsCollection.insertOne({
-        name: item.name,
+
+    for (const itemData of items) {
+      const newItem = await Item.create({
+        name: itemData.name,
         category_id: category._id,
         max_quantity: 100,
-        current_quantity: item.quantity
+        current_quantity: itemData.quantity
       });
-      
-      await transactionsCollection.insertOne({
-        item_id: newItem.insertedId,
-        quantity: item.quantity,
+
+      await Transaction.create({
+        item_id: newItem._id,
+        quantity: itemData.quantity,
         transaction_type: 'RECEIVE',
         transaction_date: new Date()
       });
-      
-      categoryCapacity += item.quantity;
+
+      categoryCapacity += itemData.quantity;
     }
-    
-    await categoriesCollection.updateOne(
-      { _id: category._id },
-      { $set: { current_capacity: categoryCapacity } }
-    );
+
+    await Category.findByIdAndUpdate(category._id, { current_capacity: categoryCapacity });
   }
-  
-  console.log('Items and transactions seeded');
+
+  console.log('Seeding complete');
 };
 
 module.exports = seedDatabase;
 
-// Run if called directly
 if (require.main === module) {
   connectDB()
     .then(() => seedDatabase())
-    .then(() => {
-      console.log('Seeding complete!');
-      process.exit(0);
-    })
+    .then(() => process.exit(0))
     .catch(err => {
       console.error('Seeding failed:', err);
       process.exit(1);
